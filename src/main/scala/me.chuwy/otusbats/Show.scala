@@ -8,21 +8,22 @@ trait Show[A] {
 object Show {
 
   // 1.1 Instances (`Int`, `String`, `Boolean`)
-
+  implicit val intShow: Show[Int] = Show.fromFunction[Int](a => a.toString)
+  implicit val stringShow: Show[String] = Show.fromFunction[String](a => a)
+  implicit val booleanShow: Show[Boolean] = Show.fromFunction[Boolean](a => a.toString)
 
   // 1.2 Instances with conditional implicit
 
-  implicit def listShow[A](implicit ev: Show[A]): Show[List[A]] =
-    ???
+  implicit def listShow[A](implicit ev: Show[A]): Show[List[A]] = (a: List[A]) => a.map(s => ev.show(s)).mkString(",")
 
 
   // 2. Summoner (apply)
+  def apply[A](implicit ev: Show[A]): Show[A] = ev
 
   // 3. Syntax extensions
 
   implicit class ShowOps[A](a: A) {
-    def show(implicit ev: Show[A]): String =
-      ???
+    def show(implicit ev: Show[A]): String = ev.show(a)
 
     def mkString_[B](begin: String, end: String, separator: String)(implicit S: Show[B], ev: A <:< List[B]): String = {
       // with `<:<` evidence `isInstanceOf` is safe!
@@ -40,15 +41,15 @@ object Show {
    *  @param end. ']' in above example
    */
   def mkString_[A: Show](list: List[A], begin: String, end: String, separator: String): String =
-    ???
+    list.map(a => a.show).mkString(begin, separator, end)
 
 
   // 4. Helper constructors
 
   /** Just use JVM `toString` implementation, available on every object */
-  def fromJvm[A]: Show[A] = ???
+  def fromJvm[A]: Show[A] = (a: A) => a.toString
   
   /** Provide a custom function to avoid `new Show { ... }` machinery */
-  def fromFunction[A](f: A => String): Show[A] = ???
+  def fromFunction[A](f: A => String): Show[A] = (a: A) => f(a)
 
 }
